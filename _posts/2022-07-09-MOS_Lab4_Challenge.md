@@ -2,7 +2,7 @@
 title: 北航操作系统Lab4挑战性任务
 date: 2022-07-09 20:00:00 +/-TTTT
 categories: [TOP_CATEGORIE, SUB_CATEGORIE]
-tags: [操作系统]     # TAG names should always be lowercase
+tags: [operating_system]     # TAG names should always be lowercase
 author: lyh
 ---
 
