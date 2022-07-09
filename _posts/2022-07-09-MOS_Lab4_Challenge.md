@@ -225,7 +225,7 @@ int sem_wait(Sem *s) {
 
 哇哈哈，从6.S081抄来的创意，从多进程改成了多线程
 
-![](../../assets/img/2022-07-09-%E5%8C%97%E8%88%AA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9FLab4%E6%8C%91%E6%88%98%E6%80%A7%E4%BB%BB%E5%8A%A1/%E8%B4%A8%E6%95%B0%E7%AD%9B%E7%A4%BA%E6%84%8F%E5%9B%BE.PNG)
+![](../../assets/img/2022-07-09-MOS_Lab4_Challenge/%E8%B4%A8%E6%95%B0%E7%AD%9B%E7%A4%BA%E6%84%8F%E5%9B%BE.PNG)
 
 本测试使用50+个线程，100+个信号量
 
