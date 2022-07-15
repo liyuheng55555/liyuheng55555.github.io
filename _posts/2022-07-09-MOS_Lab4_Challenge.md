@@ -2,7 +2,7 @@
 title: 北航操作系统Lab4挑战性任务
 date: 2022-07-09 20:00:00 +/-TTTT
 categories: [TOP_CATEGORIE, SUB_CATEGORIE]
-tags: [operating_system]     # TAG names should always be lowercase
+tags: [操作系统]     # TAG names should always be lowercase
 author: lyh
 ---
 
@@ -225,7 +225,7 @@ int sem_wait(Sem *s) {
 
 哇哈哈，从6.S081抄来的创意，从多进程改成了多线程
 
-![](../../assets/img/2022-07-09-MOS_Lab4_Challenge/%E8%B4%A8%E6%95%B0%E7%AD%9B%E7%A4%BA%E6%84%8F%E5%9B%BE.PNG)
+![](/assets/img/2022-07-09-MOS_Lab4_Challenge/%E8%B4%A8%E6%95%B0%E7%AD%9B%E7%A4%BA%E6%84%8F%E5%9B%BE.PNG)
 
 本测试使用50+个线程，100+个信号量
 
