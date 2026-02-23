@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRE 佛脚极简系统 (三栏旗舰版)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --card-hover: #f8fafc;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --text-example: #059669;
+            --accent: #e11d48; /* 新增一个强调色给全打乱按钮 */
+        }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        .layout-container { display: flex; max-width: 1400px; margin: 0 auto; padding: 2rem; gap: 2rem; align-items: flex-start; }
+        .left-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+        .main-content { flex: 1; min-width: 0; }
+        .right-sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 2rem; height: calc(100vh - 4rem); overflow-y: auto; background: var(--card-bg); padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+
+        .control-btn {
+            background: var(--card-bg);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .control-btn:hover { background: var(--primary); color: white; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.15); }
+        .control-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* 针对List全打乱按钮的特殊强调 */
+        .btn-list-fully { border-color: var(--accent); color: var(--accent); }
+        .btn-list-fully:hover { background: var(--accent); border-color: var(--accent); }
+        .btn-list-fully.active { background: var(--accent); border-color: var(--accent); }
+
+        .global-toggle-btn { background: var(--primary); color: white; }
+        .global-toggle-btn.active { background: var(--card-bg); color: var(--text-muted); border-color: #d1d5db; }
+
+        .list-title { font-size: 1.8rem; font-weight: 800; color: var(--primary); margin: 3rem 0 1rem 0; padding-bottom: 0.5rem; border-bottom: 3px solid var(--primary); }
+        .list-title:first-child { margin-top: 0; }
+        .unit-title { font-size: 1.2rem; font-weight: 600; color: var(--text-muted); margin: 1.5rem 0 0.8rem 0; display: flex; align-items: center; }
+        .unit-title::before { content: "📍"; margin-right: 0.5rem; }
+
+        .unit-footer { display: flex; justify-content: flex-start; margin-top: 0.5rem; margin-bottom: 2.5rem; }
+        .unit-footer .toggle-btn { margin-left: 0; }
+
+        .toggle-btn { margin-left: 1rem; padding: 0.3rem 0.8rem; font-size: 0.85rem; color: var(--primary); background: #e0e7ff; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; font-weight: 600; }
+        .toggle-btn:hover { background: var(--primary); color: #ffffff; }
+        .toggle-btn.btn-hidden-state { background: #f3f4f6; color: var(--text-muted); border: 1px solid #d1d5db; padding: calc(0.3rem - 1px) calc(0.8rem - 1px); }
+        .toggle-btn.btn-hidden-state:hover { background: #e5e7eb; }
+
+        .hide-text { visibility: hidden !important; opacity: 0 !important; }
+
+        .word-row { display: flex; flex-direction: column; justify-content: center; background: var(--card-bg); padding: 1rem 1.5rem; margin-bottom: 0.5rem; border-radius: 8px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); cursor: pointer; transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease; }
+        .word-row:hover { transform: translateX(4px); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); background-color: var(--card-hover); }
+        .word-row:hover .hide-text { visibility: visible !important; opacity: 1 !important; }
+
+        .word-header { display: flex; align-items: baseline; gap: 1.5rem; margin-bottom: 0.3rem; }
+        .word-text { font-size: 1.25rem; font-weight: 700; color: var(--text-main); width: 180px; flex-shrink: 0; }
+        .meaning-text { font-size: 1rem; color: var(--text-muted); transition: opacity 0.2s ease, visibility 0.2s ease; }
+        .example-text { font-size: 0.95rem; color: var(--text-example); font-style: italic; margin-top: 0.4rem; padding-left: calc(180px + 1.5rem); transition: opacity 0.2s ease, visibility 0.2s ease; }
+
+        .right-sidebar h3 { margin-top: 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
+        .nav-details { margin-bottom: 0.5rem; }
+        .nav-details summary { font-weight: bold; cursor: pointer; padding: 0.4rem 0; color: var(--text-main); transition: color 0.2s; }
+        .nav-details summary:hover { color: var(--primary); }
+        .nav-unit-group { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0 0.5rem 1rem; }
+        .nav-unit-link { text-decoration: none; font-size: 0.85rem; color: var(--text-muted); background: #e5e7eb; padding: 0.2rem 0.6rem; border-radius: 4px; transition: all 0.2s; }
+        .nav-unit-link:hover { background: var(--primary); color: white; }
+    </style>
+</head>
+<body>
+<div class="layout-container">
+    <div class="left-sidebar">
+        <button id="btn-global-toggle" class="control-btn global-toggle-btn" onclick="toggleGlobalVisibility()">🙈 全局隐藏释义</button>
+        <hr style="width: 100%; border: 0; border-top: 1px solid #e5e7eb; margin: 0.5rem 0;">
+
+        <button id="btn-shuffle-words" class="control-btn" onclick="toggleShuffleWords()">🔀 Unit 内单词打乱</button>
+        <button id="btn-shuffle-units" class="control-btn" onclick="toggleShuffleUnits()">🔀 List 内 Unit 打乱</button>
+
+        <button id="btn-list-fully" class="control-btn btn-list-fully" onclick="toggleListFullyShuffled()">🌪️ List 内全打乱</button>
+    </div>
+
+    <div class="main-content">
+        <div id="word-list">正在加载与解析数据，请稍候...</div>
+    </div>
+
+    <div class="right-sidebar">
+        <h3>📑 学习导航</h3>
+        <p id="stats-info" style="font-size: 0.85rem; color: #6b7280;"></p>
+        <div id="nav-menu"></div>
+    </div>
+</div>
+
+<script>
+    const synth = window.speechSynthesis;
+    let originalData = [];
+    let currentData = [];
+
+    let allUnitIds = [];
+    let hiddenUnits = new Set();
+
+    // --- 核心状态 ---
+    let isWordsShuffled = false;    // 模式A: Unit内打乱
+    let isUnitsShuffled = false;    // 模式A: Unit排序打乱
+    let isListFullyShuffled = false; // 模式B: List全打乱
+
+    function playAudio(word) {
+        if(synth.speaking) synth.cancel();
+        const utterThis = new SpeechSynthesisUtterance(word);
+        utterThis.lang = 'en-US';
+        utterThis.rate = 0.85;
+        synth.speak(utterThis);
+    }
+
+    function shuffleArray(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function buildStructuredData(flatRows) {
+        let data = [];
+        let listObj = null;
+        let unitObj = null;
+        let validIndex = 0;
+        allUnitIds = [];
+
+        flatRows.forEach(row => {
+            const word = row[0] ? row[0].trim().toLowerCase() : "";
+            if (!word) return;
+
+            const col2 = row[1] ? row[1].trim() : "";
+            const col3 = row[2] ? row[2].trim() : "";
+            const meaning = `${col2} ${col3}`.trim();
+            const example = row[3] ? row[3].trim() : "";
+
+            if (!meaning) return;
+
+            if (validIndex % 100 === 0) {
+                listObj = { listNum: Math.floor(validIndex / 100) + 1, units: [] };
+                data.push(listObj);
+            }
+
+            if (validIndex % 10 === 0) {
+                let globalUnitNum = Math.floor(validIndex / 10) + 1;
+                let localUnitNum = Math.floor((validIndex % 100) / 10) + 1;
+                unitObj = { globalUnitNum, localUnitNum, words: [] };
+                listObj.units.push(unitObj);
+                allUnitIds.push(globalUnitNum);
+            }
+
+            unitObj.words.push({ word, meaning, example });
+            validIndex++;
+        });
+        return { data, totalWords: validIndex };
+    }
+
+    function loadCSVData() {
+        Papa.parse("fojiao_working.csv", {
+            download: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                const parsed = buildStructuredData(results.data);
+                originalData = parsed.data;
+                applyDataState();
+            },
+            error: function(err) {
+                document.getElementById('word-list').innerHTML = `<div style="color: red; padding: 2rem;"><h3>❌ 无法读取 CSV 文件</h3><p>请开启本地服务：<code>python -m http.server 8000</code></p></div>`;
+            }
+        });
+    }
+
+    // --- 统筹界面按钮的显示状态 ---
+    function updateButtonUI() {
+        const btnWords = document.getElementById('btn-shuffle-words');
+        const btnUnits = document.getElementById('btn-shuffle-units');
+        const btnList = document.getElementById('btn-list-fully');
+
+        // 模式A - Word 按钮
+        if (isWordsShuffled) {
+            btnWords.classList.add('active');
+            btnWords.innerHTML = '🔄 恢复 Unit 内单词';
+        } else {
+            btnWords.classList.remove('active');
+            btnWords.innerHTML = '🔀 Unit 内单词打乱';
+        }
+
+        // 模式A - Unit 按钮
+        if (isUnitsShuffled) {
+            btnUnits.classList.add('active');
+            btnUnits.innerHTML = '🔄 恢复 List 内 Unit';
+        } else {
+            btnUnits.classList.remove('active');
+            btnUnits.innerHTML = '🔀 List 内 Unit 打乱';
+        }
+
+        // 模式B - 全局 按钮
+        if (isListFullyShuffled) {
+            btnList.classList.add('active');
+            btnList.innerHTML = '🔄 恢复原序 (解除全打乱)';
+        } else {
+            btnList.classList.remove('active');
+            btnList.innerHTML = '🌪️ List 内全打乱';
+        }
+    }
+
+    // 切换：Unit 内打乱 (模式A抢占)
+    function toggleShuffleWords() {
+        isWordsShuffled = !isWordsShuffled;
+        if (isWordsShuffled) {
+            isListFullyShuffled = false; // 抢占：关闭模式B
+        }
+        updateButtonUI();
+        applyDataState();
+    }
+
+    // 切换：List 内 Unit 打乱 (模式A抢占)
+    function toggleShuffleUnits() {
+        isUnitsShuffled = !isUnitsShuffled;
+        if (isUnitsShuffled) {
+            isListFullyShuffled = false; // 抢占：关闭模式B
+        }
+        updateButtonUI();
+        applyDataState();
+    }
+
+    // 切换：List 内全打乱 (模式B抢占)
+    function toggleListFullyShuffled() {
+        isListFullyShuffled = !isListFullyShuffled;
+        if (isListFullyShuffled) {
+            // 抢占：强制关闭模式A的所有功能
+            isWordsShuffled = false;
+            isUnitsShuffled = false;
+        }
+        updateButtonUI();
+        applyDataState();
+    }
+
+    function applyDataState() {
+        let newData = JSON.parse(JSON.stringify(originalData));
+
+        if (isListFullyShuffled) {
+            // 执行模式 B 的数据处理：将 List 内所有 Unit 的单词提取出来平铺并打乱
+            newData.forEach(list => {
+                let allWordsInList = [];
+                list.units.forEach(unit => {
+                    unit.words.forEach(w => {
+                        // 核心：保留原本的 globalUnitNum，以便“全局隐藏按钮”依然能抓取到它
+                        allWordsInList.push({ ...w, globalUnitNum: unit.globalUnitNum });
+                    });
+                });
+                // 打乱这个扁平化后的数组
+                list.flatWords = shuffleArray(allWordsInList);
+            });
+        } else {
+            // 执行模式 A 的数据处理（常规分栏）
+            if (isUnitsShuffled) newData.forEach(list => { list.units = shuffleArray(list.units); });
+            if (isWordsShuffled) newData.forEach(list => { list.units.forEach(unit => { unit.words = shuffleArray(unit.words); }); });
+        }
+
+        currentData = newData;
+        renderSystem();
+    }
+
+    function syncVisibilityDOM() {
+        allUnitIds.forEach(id => {
+            const isHiding = hiddenUnits.has(id);
+            // 更新单词DOM
+            const targets = document.querySelectorAll(`.unit-content-${id}`);
+            targets.forEach(el => {
+                if (isHiding) el.classList.add('hide-text');
+                else el.classList.remove('hide-text');
+            });
+
+            // 更新Unit按钮DOM（在模式B下，这些按钮不存在，但也不会报错）
+            const btns = document.querySelectorAll(`.unit-btn-${id}`);
+            btns.forEach(btn => {
+                if (isHiding) {
+                    btn.innerHTML = '👁️ 显示释义';
+                    btn.classList.add('btn-hidden-state');
+                } else {
+                    btn.innerHTML = '🙈 隐藏释义';
+                    btn.classList.remove('btn-hidden-state');
+                }
+            });
+        });
+
+        // 更新左侧全局控制按钮
+        const globalBtn = document.getElementById('btn-global-toggle');
+        if (hiddenUnits.size === allUnitIds.length && allUnitIds.length > 0) {
+            globalBtn.innerHTML = '👁️ 全局显示释义';
+            globalBtn.classList.add('active');
+        } else {
+            globalBtn.innerHTML = '🙈 全局隐藏释义';
+            globalBtn.classList.remove('active');
+        }
+    }
+
+    function toggleGlobalVisibility() {
+        const isAllHidden = hiddenUnits.size === allUnitIds.length;
+        if (isAllHidden) {
+            hiddenUnits.clear();
+        } else {
+            allUnitIds.forEach(id => hiddenUnits.add(id));
+        }
+        syncVisibilityDOM();
+    }
+
+    function toggleUnit(globalUnitNum, event) {
+        if(event) event.stopPropagation();
+        if (hiddenUnits.has(globalUnitNum)) {
+            hiddenUnits.delete(globalUnitNum);
+        } else {
+            hiddenUnits.add(globalUnitNum);
+        }
+        syncVisibilityDOM();
+    }
+
+    // --- 渲染部分：根据状态决定是渲染分栏（模式A）还是平铺（模式B） ---
+    function renderSystem() {
+        const listContainer = document.getElementById('word-list');
+        const navContainer = document.getElementById('nav-menu');
+
+        let htmlContent = '';
+        let navContent = '';
+        let totalWordCount = 0;
+
+        currentData.forEach(list => {
+            htmlContent += `<div class="list-title" id="list-${list.listNum}">📚 List ${list.listNum}</div>`;
+            let isOpen = list.listNum === 1 ? 'open' : '';
+            navContent += `
+                    <details class="nav-details" ${isOpen}>
+                        <summary><a href="#list-${list.listNum}" style="text-decoration:none; color:inherit;">List ${list.listNum}</a></summary>
+                        <div class="nav-unit-group">
+                `;
+
+            if (isListFullyShuffled) {
+                // === 渲染 模式 B：全打乱平铺 ===
+                navContent += `<span style="font-size: 0.8rem; color: #ef4444; padding: 0.2rem 0.5rem; background: #fee2e2; border-radius: 4px;">🌪️ 全乱序状态</span>`;
+
+                list.flatWords.forEach(item => {
+                    totalWordCount++;
+                    // 根据它原本归属的 unit 判断当前是否处于被隐藏状态
+                    const isHidden = hiddenUnits.has(item.globalUnitNum);
+                    const contentClass = isHidden ? 'hide-text' : '';
+
+                    let exampleHtml = '';
+                    if (item.example) {
+                        exampleHtml = `<div class="example-text unit-content-${item.globalUnitNum} ${contentClass}">e.g. ${item.example}</div>`;
+                    }
+
+                    htmlContent += `
+                            <div class="word-row" onclick="playAudio('${item.word}')" title="点击朗读: ${item.word}">
+                                <div class="word-header">
+                                    <div class="word-text">${item.word}</div>
+                                    <div class="meaning-text unit-content-${item.globalUnitNum} ${contentClass}">${item.meaning}</div>
+                                </div>
+                                ${exampleHtml}
+                            </div>
+                        `;
+                });
+            } else {
+                // === 渲染 模式 A / 默认状态：保留分栏 ===
+                list.units.forEach(unit => {
+                    const isHidden = hiddenUnits.has(unit.globalUnitNum);
+                    const btnText = isHidden ? '👁️ 显示释义' : '🙈 隐藏释义';
+                    const btnClass = isHidden ? 'btn-hidden-state' : '';
+                    const contentClass = isHidden ? 'hide-text' : '';
+
+                    htmlContent += `
+                            <div class="unit-title" id="unit-${unit.globalUnitNum}">
+                                Unit ${unit.localUnitNum}
+                                <span style="font-size:0.85rem; color:#9ca3af; margin-left:0.5rem; font-weight:normal;">(ID: ${unit.globalUnitNum})</span>
+                                <button class="toggle-btn unit-btn-${unit.globalUnitNum} ${btnClass}" onclick="toggleUnit(${unit.globalUnitNum}, event)">${btnText}</button>
+                            </div>`;
+                    navContent += `<a href="#unit-${unit.globalUnitNum}" class="nav-unit-link">${unit.localUnitNum}</a>`;
+
+                    unit.words.forEach(item => {
+                        totalWordCount++;
+                        let exampleHtml = '';
+                        if (item.example) {
+                            exampleHtml = `<div class="example-text unit-content-${unit.globalUnitNum} ${contentClass}">e.g. ${item.example}</div>`;
+                        }
+
+                        htmlContent += `
+                                <div class="word-row" onclick="playAudio('${item.word}')" title="点击朗读: ${item.word}">
+                                    <div class="word-header">
+                                        <div class="word-text">${item.word}</div>
+                                        <div class="meaning-text unit-content-${unit.globalUnitNum} ${contentClass}">${item.meaning}</div>
+                                    </div>
+                                    ${exampleHtml}
+                                </div>
+                            `;
+                    });
+
+                    htmlContent += `
+                            <div class="unit-footer">
+                                <button class="toggle-btn unit-btn-${unit.globalUnitNum} ${btnClass}" onclick="toggleUnit(${unit.globalUnitNum}, event)">${btnText}</button>
+                            </div>
+                        `;
+                });
+            }
+
+            navContent += `</div></details>`;
+        });
+
+        listContainer.innerHTML = htmlContent;
+        navContainer.innerHTML = navContent;
+        document.getElementById('stats-info').innerText = `总计: ${totalWordCount} 词`;
+
+        syncVisibilityDOM();
+    }
+
+    window.onload = loadCSVData;
+</script>
+</body>
+</html>
