@@ -88,6 +88,68 @@
         .nav-unit-group { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.5rem 0 0.5rem 1rem; }
         .nav-unit-link { text-decoration: none; font-size: 0.85rem; color: var(--text-muted); background: #e5e7eb; padding: 0.2rem 0.6rem; border-radius: 4px; transition: all 0.2s; }
         .nav-unit-link:hover { background: var(--primary); color: white; }
+        /* =========================================
+           📱 响应式适配 (平板、折叠屏、手机、网页放大时生效)
+           ========================================= */
+        @media (max-width: 1200px) {
+            /* 1. 容器改为自适应，上下排列 */
+            .layout-container {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1.5rem;
+            }
+
+            /* 2. 解除左右侧边栏的固定宽度和吸顶，让它们占满屏幕宽度 */
+            .left-sidebar, .right-sidebar {
+                width: 100%;
+                position: static;
+                height: auto;
+                box-sizing: border-box; /* 避免 padding 撑破宽度 */
+            }
+
+            /* 3. 左侧控制台按钮改成网格自适应排列，折叠屏上两两并排 */
+            .left-sidebar {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 0.8rem;
+            }
+            .global-toggle-btn {
+                grid-column: 1 / -1; /* 全局隐藏按钮占满整行 */
+            }
+            .control-btn {
+                justify-content: center;
+                text-align: center;
+                padding: 0.8rem;
+            }
+
+            /* 4. 中间主内容区占满 */
+            .main-content {
+                width: 100%;
+            }
+
+            /* 5. 单词行的排版优化：变成上下结构，防止单词太长和释义挤在一起 */
+            .word-row {
+                padding: 1rem;
+            }
+            .word-header {
+                flex-direction: column;
+                gap: 0.3rem;
+            }
+            .word-text {
+                width: auto;
+            }
+            .example-text {
+                padding-left: 0;
+                margin-top: 0.6rem;
+                border-left: 3px solid var(--primary); /* 加个竖线修饰例句 */
+                padding-left: 10px;
+            }
+
+            /* 6. 右侧导航栏稍微精简 */
+            .right-sidebar {
+                margin-top: 1rem;
+            }
+        }
     </style>
 </head>
 <body>
